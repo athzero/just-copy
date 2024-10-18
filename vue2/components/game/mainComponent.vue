@@ -2,51 +2,46 @@
   <div class="main-container">
     <!-- Start Screen -->
     <div class="start-screen" v-if="!gameStarted">
-      <h1 class="title">Добро пожаловать в Крестики-Нолики!</h1>
+      <h1 class="start-screen__title">Добро пожаловать в Крестики-Нолики!</h1>
 
       <!-- Grid Size Selection -->
-      <div class="option">
+      <div class="start-screen__option">
         <label for="grid-size">Размер сетки:</label>
-        <select id="grid-size" v-model="gridSize" class="dropdown">
+        <select id="grid-size" v-model="gridSize" class="start-screen__dropdown">
           <option v-for="size in [3, 4, 5]" :key="size" :value="size">{{ size }} x {{ size }}</option>
         </select>
       </div>
 
       <!-- Play Against Bot Option -->
-      <div class="option">
+      <div class="start-screen__option">
         <label for="against-bot">Играть против бота:</label>
-        <input id="against-bot" type="checkbox" v-model="againstBot" class="checkbox">
+        <input id="against-bot" type="checkbox" v-model="againstBot" class="start-screen__checkbox">
       </div>
 
       <!-- Difficulty Selection -->
-      <div class="option" v-if="againstBot">
+      <div class="start-screen__option" v-if="againstBot">
         <label for="difficulty">Сложность:</label>
-        <select id="difficulty" v-model="difficulty" class="dropdown">
+        <select id="difficulty" v-model="difficulty" class="start-screen__dropdown">
           <option value="easy">Легкая</option>
           <option value="medium">Средняя</option>
           <option value="hard">Сложная</option>
         </select>
       </div>
 
-      <button @click="startGame" class="start-button">Начать игру</button>
+      <button @click="startGame" class="start-screen__start-button">Начать игру</button>
     </div>
 
     <!-- Game Screen -->
     <div class="game-screen" v-if="gameStarted">
-      <div :style="gridStyle" class="grid-container">
-        <cell-component
-          v-for="(cell, index) in cells"
-          :key="index"
-          :index="index"
-          :value="cell"
-          @cell-click="handleCellClick"
-        />
+      <div :style="gridStyle" class="game-screen__grid-container">
+        <CellComponent v-for="(cell, index) in cells" :key="index" :index="index" :value="cell"
+          @cell-click="handleCellClick" />
       </div>
 
-      <div v-if="winner" class="result">
-        <p v-if="winner !== 'Ничья'">{{ winner }} победил!</p>
+      <div v-if="winner" class="game-screen__result">
+        <p v-if="winner !== DRAW_MESSAGE">{{ winner }} победил!</p>
         <p v-else>{{ winner }}</p>
-        <button @click="resetGame" class="reset-button">Сброс</button>
+        <button @click="resetGame" class="game-screen__reset-button">Сброс</button>
       </div>
     </div>
   </div>
@@ -54,6 +49,8 @@
 
 <script>
 import CellComponent from './cellComponent.vue';
+
+const DRAW_MESSAGE = "Ничья";
 
 export default {
   components: {
@@ -80,11 +77,6 @@ export default {
         gridTemplateRows: `repeat(${this.gridSize}, ${cellSize}px)`,
         width: `${gridDimension}px`,
         height: `${gridDimension}px`,
-        gap: '10px',
-        padding: '20px',
-        backgroundColor: 'transparent',
-        border: 'none',
-        outline: 'none',
       };
     },
   },
@@ -100,9 +92,12 @@ export default {
       }
     },
     handleCellClick(index) {
-      if (this.cells[index] || this.winner) return;
+      if (this.cells[index] || this.winner) {
+        return;
+      }
 
-      this.$set(this.cells, index, this.currentPlayer);
+      this.cells[index] = this.currentPlayer;
+
 
       if (this.checkWin(this.currentPlayer)) {
         this.winner = this.currentPlayer;
@@ -110,7 +105,7 @@ export default {
       }
 
       if (this.isDraw()) {
-        this.winner = 'Ничья';
+        this.winner = DRAW_MESSAGE;
         return;
       }
 
@@ -125,7 +120,9 @@ export default {
 
       if (this.difficulty === 'easy') {
         let emptyCells = this.getEmptyIndices(this.cells);
-        if (emptyCells.length === 0) return;
+        if (emptyCells.length === 0) {
+          return;
+        }
         let randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
         setTimeout(() => {
           this.handleCellClick(randomIndex);
@@ -142,28 +139,28 @@ export default {
         }, 500);
       }
     },
+
     getMaxDepthForDifficulty() {
-      // Adjust max depth to prevent freezing for larger grids
       if (this.difficulty === 'medium') {
         return this.gridSize === 3 ? 2 : this.gridSize === 4 ? 3 : 2;
       } else if (this.difficulty === 'hard') {
-        return this.gridSize === 3 ? Infinity : this.gridSize === 4 ? 4 : 3; // Limit depth for large grids
+        return this.gridSize === 3 ? Infinity : this.gridSize === 4 ? 4 : 3;
       }
-      return 1; // Easy difficulty with shallow search
+      return 1;
     },
     minimax(newBoard, player, depth = 0, maxDepth = Infinity) {
       const availSpots = this.getEmptyIndices(newBoard);
 
       if (this.checkWinForMinimax(newBoard, 'X')) {
-        return { score: -10 + depth }; // Penalize for player win
+        return { score: -10 + depth };
       } else if (this.checkWinForMinimax(newBoard, 'O')) {
-        return { score: 10 - depth }; // Reward for bot win
+        return { score: 10 - depth };
       } else if (availSpots.length === 0) {
-        return { score: 0 }; // Draw
+        return { score: 0 };
       }
 
       if (depth >= maxDepth) {
-        return { score: 0 }; // Return neutral score when depth limit is reached
+        return { score: 0 };
       }
 
       const moves = [];
@@ -247,94 +244,113 @@ export default {
 };
 </script>
 
-<style scoped>
-/* Main Container Styles */
+<style scoped lang="less">
+@primary-color: #4CAF50;
+@secondary-color: #388E3C;
+@background-color: #1e1e1e;
+@screen-background: #263238;
+@font-color: #B0BEC5;
+@highlight-color: #FFC107;
+
 .main-container {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #1e1e1e;
-}
+  background-color: @background-color;
 
-.start-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: #263238;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-}
+  .start-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: @screen-background;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 
-.title {
-  color: #ffffff;
-  font-size: 32px;
-  margin-bottom: 20px;
-}
+    &__title {
+      color: #ffffff;
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
 
-.option {
-  margin: 10px 0;
-  color: #B0BEC5;
-  font-size: 18px;
-}
+    &__option {
+      margin: 10px 0;
+      color: @font-color;
+      font-size: 18px;
 
-.dropdown,
-input[type="checkbox"] {
-  margin-left: 10px;
-  color: #ffffff;
-  background-color: #263238;
-  border: 1px solid #616161;
-  border-radius: 4px;
-  padding: 4px 8px;
-}
+      &__dropdown,
+      &__checkbox {
+        margin-left: 10px;
+        color: #ffffff;
+        background-color: @screen-background;
+        border: 1px solid #616161;
+        border-radius: 4px;
+        padding: 4px 8px;
 
-.dropdown:focus,
-input[type="checkbox"]:focus {
-  border-color: #FFC107;
-}
+        &:focus {
+          border-color: @highlight-color;
+        }
+      }
+    }
 
-.start-button,
-.reset-button {
-  padding: 12px 24px;
-  background-color: #4CAF50;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 18px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.3s, transform 0.3s;
-}
+    &__start-button {
+      padding: 12px 24px;
+      background-color: @primary-color;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s, transform 0.3s;
 
-.start-button:hover,
-.reset-button:hover {
-  background-color: #388E3C;
-  transform: scale(1.05);
-}
+      &:hover {
+        background-color: @secondary-color;
+        transform: scale(1.05);
+      }
+    }
+  }
 
-.grid-container {
-  margin: 20px;
-}
+  .game-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 
-.result {
-  margin-top: 20px;
-  text-align: center;
-  color: #ffffff;
-  font-size: 24px;
-}
+    &__grid-container {
+      margin: 20px;
+      display: grid;
+      gap: 10px;
+      padding: 20px;
+      background-color: transparent;
+      border: none;
+      outline: none;
+    }
 
-.game-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
+    &__result {
+      margin-top: 20px;
+      text-align: center;
+      color: #ffffff;
+      font-size: 24px;
 
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #1e1e1e;
-  font-family: Arial, sans-serif;
+      &__reset-button {
+        padding: 12px 24px;
+        background-color: @primary-color;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transition: background-color 0.3s, transform 0.3s;
+
+        &:hover {
+          background-color: @secondary-color;
+          transform: scale(1.05);
+        }
+      }
+    }
+  }
 }
 </style>

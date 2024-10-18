@@ -1,15 +1,23 @@
 <template>
   <div class="cell" @click="handleClick">
     <transition name="fade">
-      <span v-if="value === 'X'" class="x-mark">{{ value }}</span>
-      <span v-if="value === 'O'" class="o-mark">{{ value }}</span>
+      <span v-if="value" :class="{ 'x-mark': value === 'X', 'o-mark': value === 'O' }">{{ value }}</span>
     </transition>
   </div>
 </template>
 
 <script>
 export default {
-  props: ['value', 'index'],
+  props: {
+    value: {
+      type: String,
+      required: true,
+    },
+    index: {
+      type: Number,
+      required: true,
+    },
+  },
   methods: {
     handleClick() {
       this.$emit('cell-click', this.index);
@@ -18,10 +26,14 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="less">
+@cell-size: 90px;
+@x-color: #FF6347;
+@o-color: #1E90FF;
+
 .cell {
-  width: 90px;
-  height: 90px;
+  width: @cell-size;
+  height: @cell-size;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -32,30 +44,32 @@ export default {
   background-color: #333;
   border-radius: 12px;
   transition: transform 0.3s ease, background-color 0.3s ease;
-  box-shadow: none; /* Remove shadow to eliminate grid effect */
-}
+  box-shadow: none;
 
-.cell:hover {
-  transform: scale(1.05);
-  background-color: #444;
-}
+  &:hover {
+    transform: scale(1.05);
+    background-color: #444;
+  }
 
-.x-mark {
-  color: #FF6347; /* Red color for X */
-  font-size: 40px;
-  animation: pulse 0.5s ease;
-}
+  span {
+    font-size: 40px;
+    animation: pulse 0.5s ease;
 
-.o-mark {
-  color: #1E90FF; /* Blue color for O */
-  font-size: 40px;
-  animation: pulse 0.5s ease;
+    &.x-mark {
+      color: @x-color;
+    }
+
+    &.o-mark {
+      color: @o-color;
+    }
+  }
 }
 
 @keyframes pulse {
   0% {
     transform: scale(0.8);
   }
+
   100% {
     transform: scale(1);
   }
